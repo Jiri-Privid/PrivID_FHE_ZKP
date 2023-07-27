@@ -1,0 +1,18 @@
+[package]
+name = "bulletproofs_example"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tari_bulletproofs = { git = "https://github.com/tari-project/bulletproofs", version = "4.4.1" }
+rand = { version = "0.8", features = ["std_rng"] }
+curve25519-dalek = { package = "tari-curve25519-dalek", git = "https://github.com/tari-project/curve25519-dalek", version = "4.0.2", features = [
+    "alloc",
+    "zeroize",
+    "rand_core",
+    "precomputed-tables",
+    "digest",
+] }
+merlin = "3.0.0"
