@@ -3,7 +3,7 @@ extern crate curve25519_dalek;
 extern crate libspartan;
 extern crate merlin;
 use curve25519_dalek::scalar::Scalar;
-use libspartan::{InputsAssignment, Instance, SNARKGens, VarsAssignment, SNARK, NIZKGens, NIZK};
+use libspartan::{InputsAssignment, Instance, NIZKGens, SNARKGens, VarsAssignment, NIZK, SNARK};
 use merlin::Transcript;
 use rand::rngs::OsRng;
 
@@ -25,13 +25,21 @@ fn snark_proof() {
 
     // produce a proof of satisfiability
     let mut prover_transcript = Transcript::new(b"snark_example");
-    let proof = SNARK::prove(&inst, &comm, &decomm, vars, &inputs, &gens, &mut prover_transcript);
+    let proof = SNARK::prove(
+        &inst,
+        &comm,
+        &decomm,
+        vars,
+        &inputs,
+        &gens,
+        &mut prover_transcript,
+    );
 
     // verify the proof of satisfiability
     let mut verifier_transcript = Transcript::new(b"snark_example");
     assert!(proof
-      .verify(&comm, &inputs, &mut verifier_transcript, &gens)
-      .is_ok());
+        .verify(&comm, &inputs, &mut verifier_transcript, &gens)
+        .is_ok());
     println!("SNARK proof verification successful!");
 }
 
@@ -54,21 +62,21 @@ fn nizk_proof() {
     // verify the proof of satisfiability
     let mut verifier_transcript = Transcript::new(b"nizk_example");
     assert!(proof
-      .verify(&inst, &inputs, &mut verifier_transcript, &gens)
-      .is_ok());
+        .verify(&inst, &inputs, &mut verifier_transcript, &gens)
+        .is_ok());
     println!("NIZK proof verification successful!");
 }
 
 fn r1cs_proof() {
     // produce a tiny instance
     let (
-    num_cons,
-    num_vars,
-    num_inputs,
-    num_non_zero_entries,
-    inst,
-    assignment_vars,
-    assignment_inputs,
+        num_cons,
+        num_vars,
+        num_inputs,
+        num_non_zero_entries,
+        inst,
+        assignment_vars,
+        assignment_inputs,
     ) = produce_tiny_r1cs();
 
     // produce public parameters
@@ -80,23 +88,22 @@ fn r1cs_proof() {
     // produce a proof of satisfiability
     let mut prover_transcript = Transcript::new(b"snark_example");
     let proof = SNARK::prove(
-    &inst,
-    &comm,
-    &decomm,
-    assignment_vars,
-    &assignment_inputs,
-    &gens,
-    &mut prover_transcript,
+        &inst,
+        &comm,
+        &decomm,
+        assignment_vars,
+        &assignment_inputs,
+        &gens,
+        &mut prover_transcript,
     );
 
     // verify the proof of satisfiability
     let mut verifier_transcript = Transcript::new(b"snark_example");
     assert!(proof
-    .verify(&comm, &assignment_inputs, &mut verifier_transcript, &gens)
-    .is_ok());
+        .verify(&comm, &assignment_inputs, &mut verifier_transcript, &gens)
+        .is_ok());
     println!("r1cs proof verification successful!");
 }
-
 
 fn produce_tiny_r1cs() -> (
     usize,
@@ -106,7 +113,7 @@ fn produce_tiny_r1cs() -> (
     Instance,
     VarsAssignment,
     InputsAssignment,
-    ) {
+) {
     // We will use the following example, but one could construct any R1CS instance.
     // Our R1CS instance is three constraints over five variables and two public inputs
     // (Z0 + Z1) * I0 - Z2 = 0
@@ -186,22 +193,22 @@ fn produce_tiny_r1cs() -> (
 
     // check if the instance we created is satisfiable
     let res = inst.is_sat(&assignment_vars, &assignment_inputs);
-    assert_eq!(res.unwrap(), true);
+    assert!(res.unwrap());
 
     (
-    num_cons,
-    num_vars,
-    num_inputs,
-    num_non_zero_entries,
-    inst,
-    assignment_vars,
-    assignment_inputs,
+        num_cons,
+        num_vars,
+        num_inputs,
+        num_non_zero_entries,
+        inst,
+        assignment_vars,
+        assignment_inputs,
     )
 }
 
 /// This needs to be run with
 /// cargo +nightly run --release
-/// 
+///
 /// It can be installed with
 /// rustup toolchain install nightly
 fn main() {
