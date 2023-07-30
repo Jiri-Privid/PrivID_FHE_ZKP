@@ -1,49 +1,49 @@
 use std::time::Instant;
-use tfhe::integer::{gen_keys_radix, PublicKeyBig, RadixCiphertextBig, RadixClientKey, ServerKey};
-use tfhe::shortint::parameters::PARAM_MESSAGE_2_CARRY_2;
+use tfhe::integer::{gen_keys_radix, PublicKey, RadixCiphertext, RadixClientKey, ServerKey};
+use tfhe::shortint::parameters::PARAM_MESSAGE_2_CARRY_2_KS_PBS;
 
 const NUMBLOCK: usize = 4;
 const ITERATIONS_TFHE: u64 = 40;
 
-fn encrypt_tfhe(public_key: &PublicKeyBig, value: u64) -> RadixCiphertextBig {
+fn encrypt_tfhe(public_key: &PublicKey, value: u64) -> RadixCiphertext {
     public_key.encrypt_radix(value, NUMBLOCK)
 }
 
 fn compute_tfhe(
     server_key: &ServerKey,
-    left: &mut RadixCiphertextBig,
-    right: &mut RadixCiphertextBig,
-) -> RadixCiphertextBig {
+    left: &mut RadixCiphertext,
+    right: &mut RadixCiphertext,
+) -> RadixCiphertext {
     server_key.smart_add(left, right)
 }
 
 fn compute_mul_tfhe(
     server_key: &ServerKey,
-    left: &mut RadixCiphertextBig,
-    right: &mut RadixCiphertextBig,
-) -> RadixCiphertextBig {
+    left: &mut RadixCiphertext,
+    right: &mut RadixCiphertext,
+) -> RadixCiphertext {
     server_key.smart_mul(left, right)
 }
 
-fn compute_tfhe_scalar(server_key: &ServerKey, left: &mut RadixCiphertextBig, right: u64) {
+fn compute_tfhe_scalar(server_key: &ServerKey, left: &mut RadixCiphertext, right: u64) {
     server_key.smart_scalar_add_assign(left, right);
 }
 
-fn compute_tfhe_mul_scalar(server_key: &ServerKey, left: &mut RadixCiphertextBig, right: u64) {
+fn compute_tfhe_mul_scalar(server_key: &ServerKey, left: &mut RadixCiphertext, right: u64) {
     server_key.smart_scalar_mul_assign(left, right)
 }
 
-fn decrypt_tfhe(client_key: &RadixClientKey, value: &RadixCiphertextBig) -> u64 {
+fn decrypt_tfhe(client_key: &RadixClientKey, value: &RadixCiphertext) -> u64 {
     client_key.decrypt(value)
 }
 
-fn count_decryption(client_key: &RadixClientKey, encrypted_values: &Vec<RadixCiphertextBig>) {
+fn count_decryption(client_key: &RadixClientKey, encrypted_values: &[RadixCiphertext]) {
     let mut decrypted_values: Vec<u64> = Vec::with_capacity(ITERATIONS_TFHE as usize);
 
     // Counting decryption time
     let start = Instant::now();
-    for i in 0..encrypted_values.len() {
-        decrypted_values.push(decrypt_tfhe(&client_key, &encrypted_values[i]));
+    for i in encrypted_values.iter() {
+        decrypted_values.push(decrypt_tfhe(client_key, i));
     }
 
     let elapsed = start.elapsed();
@@ -66,15 +66,13 @@ fn count_decryption(client_key: &RadixClientKey, encrypted_values: &Vec<RadixCip
 
 fn main() {
     // We generate a set of client/server keys, using the default parameters:
-    let (client_key, server_key) = gen_keys_radix(&PARAM_MESSAGE_2_CARRY_2, NUMBLOCK);
+    let (client_key, server_key) = gen_keys_radix(PARAM_MESSAGE_2_CARRY_2_KS_PBS, NUMBLOCK);
 
     //We generate the public key from the secret client key:
-    let public_key = PublicKeyBig::new(&client_key);
-    let mut encrypted_values: Vec<RadixCiphertextBig> =
-        Vec::with_capacity(ITERATIONS_TFHE as usize);
-    let mut computed_values: Vec<RadixCiphertextBig> =
-        Vec::with_capacity((ITERATIONS_TFHE) as usize);
-    let mut computed_mul_values: Vec<RadixCiphertextBig> =
+    let public_key = PublicKey::new(&client_key);
+    let mut encrypted_values: Vec<RadixCiphertext> = Vec::with_capacity(ITERATIONS_TFHE as usize);
+    let mut computed_values: Vec<RadixCiphertext> = Vec::with_capacity((ITERATIONS_TFHE) as usize);
+    let mut computed_mul_values: Vec<RadixCiphertext> =
         Vec::with_capacity((ITERATIONS_TFHE) as usize);
 
     println!(
@@ -143,7 +141,7 @@ fn main() {
     // For each entry in the Vec, sum the current element with the next.
     for i in 0..(ITERATIONS_TFHE - 1) {
         let left = &mut encrypted_values[i as usize];
-        let right = i as u64;
+        let right = i;
         compute_tfhe_scalar(&server_key, left, right);
     }
 
@@ -197,7 +195,7 @@ fn main() {
     // For each entry in the Vec, sum the current element with the next.
     for i in 0..(ITERATIONS_TFHE) {
         let left = &mut computed_mul_values[i as usize];
-        let right = i as u64;
+        let right = i;
         compute_tfhe_mul_scalar(&server_key, left, right);
     }
 
