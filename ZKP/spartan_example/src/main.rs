@@ -7,6 +7,8 @@ use libspartan::{InputsAssignment, Instance, NIZKGens, SNARKGens, VarsAssignment
 use merlin::Transcript;
 use rand::rngs::OsRng;
 
+use spartan_example::example;
+
 fn snark_proof() {
     // specify the size of an R1CS instance
     let num_vars = 1024;
@@ -215,4 +217,5 @@ fn main() {
     snark_proof();
     nizk_proof();
     r1cs_proof();
+    example();
 }

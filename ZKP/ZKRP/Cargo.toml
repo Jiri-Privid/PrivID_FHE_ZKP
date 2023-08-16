@@ -1,0 +1,20 @@
+[package]
+name = "ZKRP"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rand = "0.8.5"
+curve25519-dalek = { package = "tari-curve25519-dalek", git = "https://github.com/tari-project/curve25519-dalek", version = "4.0.3", features = [
+    "alloc",
+    "zeroize",
+    "precomputed-tables",
+    "rand_core",
+    "digest",
+    "serde",
+] }
+merlin = "3.0.0"
+tari_bulletproofs = { git = "https://github.com/tari-project/bulletproofs" }
+serde = { version = "1.0.183", features = ["derive"] }
