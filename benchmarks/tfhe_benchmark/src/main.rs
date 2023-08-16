@@ -1,9 +1,10 @@
+use serde::Serialize;
 use std::time::Instant;
 use tfhe::integer::{gen_keys_radix, PublicKey, RadixCiphertext, RadixClientKey, ServerKey};
 use tfhe::shortint::parameters::PARAM_MESSAGE_2_CARRY_2_KS_PBS;
 
 const NUMBLOCK: usize = 4;
-const ITERATIONS_TFHE: u64 = 40;
+const ITERATIONS_TFHE: u64 = 10;
 
 fn encrypt_tfhe(public_key: &PublicKey, value: u64) -> RadixCiphertext {
     public_key.encrypt_radix(value, NUMBLOCK)
@@ -64,12 +65,22 @@ fn count_decryption(client_key: &RadixClientKey, encrypted_values: &[RadixCipher
     println!("\n");
 }
 
+fn size_of<A: Serialize>(value: &A, name: &str) {
+    let serialized = bincode::serialize(value).unwrap();
+    let size = serialized.len();
+
+    println!("Size of {name} is {size}");
+}
+
 fn main() {
     // We generate a set of client/server keys, using the default parameters:
     let (client_key, server_key) = gen_keys_radix(PARAM_MESSAGE_2_CARRY_2_KS_PBS, NUMBLOCK);
+    size_of(&client_key, "client key");
+    size_of(&server_key, "server key");
 
     //We generate the public key from the secret client key:
     let public_key = PublicKey::new(&client_key);
+    size_of(&public_key, "public key");
     let mut encrypted_values: Vec<RadixCiphertext> = Vec::with_capacity(ITERATIONS_TFHE as usize);
     let mut computed_values: Vec<RadixCiphertext> = Vec::with_capacity((ITERATIONS_TFHE) as usize);
     let mut computed_mul_values: Vec<RadixCiphertext> =
@@ -88,6 +99,7 @@ fn main() {
 
         encrypted_values.push(encrypt_tfhe(&public_key, i));
     }
+    size_of(&encrypted_values[0], "encrypted value");
 
     let elapsed = start.elapsed();
     let elapsed_ns = elapsed.as_nanos();
@@ -133,7 +145,7 @@ fn main() {
 
     // Counting sum time
     println!(
-        "\n\nCounting the time to do scalar operations in {} entries.\n",
+        "\n\nCounting the time to do scalar sum operations in {} entries.\n",
         ITERATIONS_TFHE
     );
 
@@ -216,8 +228,10 @@ fn main() {
 
     println!("\n\nCounting decryption for computed values\n");
     count_decryption(&client_key, &computed_values);
+    size_of(&computed_values[0], "computed value");
 
     // Counting decryption times
     println!("\n\nCounting decryption for scalar computations\n");
     count_decryption(&client_key, &encrypted_values);
+    size_of(&encrypted_values[0], "encrypted value after computation");
 }
